@@ -34,7 +34,9 @@ export default function ChatInterface() {
   useEffect(() => {
     const fetchMarkets = async () => {
       try {
-        const response = await fetch(`${process.env.SAM_BE_URL}/markets/names`);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SAM_BE_URL}/markets/names`,
+        );
         if (!response.ok) throw new Error("Failed to fetch markets");
         const data = await response.json();
         setMarkets(data);
@@ -70,11 +72,14 @@ export default function ChatInterface() {
       formData.append("message", newMessage.content);
       formData.append("market", selectedMarket.toString());
 
-      const response = await fetch(`${process.env.SAM_BE_URL}/chat`, {
-        body: formData,
-        method: "POST",
-        redirect: "follow",
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SAM_BE_URL}/chat`,
+        {
+          body: formData,
+          method: "POST",
+          redirect: "follow",
+        },
+      );
 
       if (!response.ok) throw new Error("Failed to send message");
 

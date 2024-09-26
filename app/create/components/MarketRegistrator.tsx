@@ -98,7 +98,7 @@ export default function MarketRegistrator() {
       files.forEach((file) => formData.append("files", file));
 
       const response = await fetch(
-        `${process.env.SAM_BE_URL}/markets/register`,
+        `${process.env.NEXT_PUBLIC_SAM_BE_URL}/markets/register`,
         {
           method: "POST",
           body: formData,
