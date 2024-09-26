@@ -164,8 +164,8 @@ export default function MarketRegistrator() {
             Market Successfully Registered!
           </h2>
           <p className="text-lg text-gray-600 mb-6">
-            Congratulations! Your market "{marketData.name}" has been
-            successfully registered.
+            Congratulations! Your market {marketData.name} has been successfully
+            registered.
           </p>
           <Button
             onClick={resetRegistration}
