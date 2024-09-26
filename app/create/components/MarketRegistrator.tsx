@@ -97,10 +97,13 @@ export default function MarketRegistrator() {
       formData.append("temperature", marketData.temperature.toString());
       files.forEach((file) => formData.append("files", file));
 
-      const response = await fetch(`${process.env.beUrl}/markets/register`, {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        `${process.env.SAM_BE_URL}/markets/register`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Registration failed");
