@@ -97,7 +97,7 @@ export default function MarketRegistrator() {
       formData.append("temperature", marketData.temperature.toString());
       files.forEach((file) => formData.append("files", file));
 
-      const response = await fetch("http://localhost:8080/markets/register", {
+      const response = await fetch(`${process.env.beUrl}/markets/register`, {
         method: "POST",
         body: formData,
       });
