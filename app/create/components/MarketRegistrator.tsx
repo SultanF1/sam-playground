@@ -2,7 +2,15 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, File, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import {
+  Upload,
+  File,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Plus,
+  Trash,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +37,7 @@ export default function MarketRegistrator() {
     prompt: "",
     temperature: 0.5,
   });
+  const [questions, setQuestions] = useState<string[]>([""]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -80,11 +89,30 @@ export default function MarketRegistrator() {
     }));
   };
 
+  const handleQuestionChange = (index: number, value: string) => {
+    setQuestions((prevQuestions) => {
+      const newQuestions = [...prevQuestions];
+      newQuestions[index] = value;
+      return newQuestions;
+    });
+  };
+
+  const addQuestion = () => {
+    setQuestions((prevQuestions) => [...prevQuestions, ""]);
+  };
+
+  const removeQuestion = (index: number) => {
+    setQuestions((prevQuestions) =>
+      prevQuestions.filter((_, i) => i !== index),
+    );
+  };
+
   const registerMarket = async () => {
     if (
       !marketData.name.trim() ||
       !marketData.prompt.trim() ||
-      files.length === 0
+      files.length === 0 ||
+      questions.filter((q) => q.trim()).length === 0
     )
       return;
 
@@ -95,13 +123,15 @@ export default function MarketRegistrator() {
       formData.append("market", marketData.name);
       formData.append("prompt", marketData.prompt);
       formData.append("temperature", marketData.temperature.toString());
+      formData.append("entryQuestions", JSON.stringify(questions));
+      console.log(JSON.stringify(questions));
       files.forEach((file) => formData.append("files", file));
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SAM_BE_URL}/markets/register`,
         {
           method: "POST",
-          body: formData,
+          body: formData as BodyInit,
         },
       );
 
@@ -139,6 +169,7 @@ export default function MarketRegistrator() {
       temperature: 0.5,
     });
     setFiles([]);
+    setQuestions([""]);
     setRegistrationStatus("idle");
   };
 
@@ -218,6 +249,41 @@ export default function MarketRegistrator() {
               />
             </div>
             <div>
+              <Label>Questions for LLM</Label>
+              {questions.map((question, index) => (
+                <div key={index} className="flex items-center mt-2">
+                  <Input
+                    value={question}
+                    onChange={(e) =>
+                      handleQuestionChange(index, e.target.value)
+                    }
+                    placeholder={`Enter question ${index + 1}`}
+                    className="flex-grow"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeQuestion(index)}
+                    className="ml-2"
+                    disabled={questions.length === 1}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addQuestion}
+                className="mt-2"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Question
+              </Button>
+            </div>
+            <div>
               <Label>Files</Label>
               <div
                 {...getRootProps()}
@@ -273,7 +339,8 @@ export default function MarketRegistrator() {
                 registrationStatus === "registering" ||
                 !marketData.name.trim() ||
                 !marketData.prompt.trim() ||
-                files.length === 0
+                files.length === 0 ||
+                questions.filter((q) => q.trim()).length === 0
               }
               className="flex items-center"
             >

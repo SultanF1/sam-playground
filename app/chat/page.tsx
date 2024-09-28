@@ -28,6 +28,7 @@ export default function ChatInterface() {
   const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
   const [markets, setMarkets] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [predefinedQuestions, setPredefinedQuestions] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatIdRef = useRef<string>(uuidv4());
 
@@ -52,14 +53,32 @@ export default function ChatInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputMessage.trim() || !selectedMarket) return;
+  useEffect(() => {
+    if (selectedMarket) {
+      fetchPredefinedQuestions(selectedMarket);
+    }
+  }, [selectedMarket]);
+
+  const fetchPredefinedQuestions = async (market: string) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SAM_BE_URL}/markets/${market}/entry-questions`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch predefined questions");
+      const data = await response.json();
+      setPredefinedQuestions(data);
+    } catch (error) {
+      console.error("Error fetching predefined questions:", error);
+    }
+  };
+
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim() || !selectedMarket) return;
 
     const newMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: inputMessage.trim(),
+      content: message.trim(),
     };
 
     setMessages((prev) => [...prev, newMessage]);
@@ -75,9 +94,9 @@ export default function ChatInterface() {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SAM_BE_URL}/chat`,
         {
-          body: formData,
+          body: formData as BodyInit,
           method: "POST",
-          redirect: "follow",
+          redirect: "follow" as RequestRedirect,
         },
       );
 
@@ -96,6 +115,15 @@ export default function ChatInterface() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSendMessage(inputMessage);
+  };
+
+  const handlePredefinedQuestionClick = (question: string) => {
+    handleSendMessage(question);
   };
 
   return (
@@ -120,10 +148,16 @@ export default function ChatInterface() {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
               >
                 <div
-                  className={`flex items-start space-x-2 ${message.role === "user" ? "flex-row-reverse space-x-reverse" : ""}`}
+                  className={`flex items-start space-x-2 ${
+                    message.role === "user"
+                      ? "flex-row-reverse space-x-reverse"
+                      : ""
+                  }`}
                 >
                   <Avatar>
                     <AvatarFallback>
@@ -131,7 +165,11 @@ export default function ChatInterface() {
                     </AvatarFallback>
                   </Avatar>
                   <div
-                    className={`rounded-lg p-3 max-w-[70%] ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary"}`}
+                    className={`rounded-lg p-3 max-w-[70%] ${
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary"
+                    }`}
                   >
                     {message.content}
                   </div>
@@ -142,7 +180,21 @@ export default function ChatInterface() {
           </CardContent>
         </ScrollArea>
       </Card>
-      <form onSubmit={handleSendMessage} className="flex space-x-2">
+      {predefinedQuestions.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2 justify-center">
+          {predefinedQuestions.map((question, index) => (
+            <Button
+              key={index}
+              variant="outline"
+              size="sm"
+              onClick={() => handlePredefinedQuestionClick(question)}
+            >
+              {question}
+            </Button>
+          ))}
+        </div>
+      )}
+      <form onSubmit={handleFormSubmit} className="flex space-x-2">
         <Input
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
